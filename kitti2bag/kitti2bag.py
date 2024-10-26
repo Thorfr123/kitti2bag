@@ -85,8 +85,8 @@ def save_dynamic_tf(bag, kitti_type, kitti, initial_time):
             tf_msg = TFMessage()
             tf_stamped = TransformStamped()
             tf_stamped.header.stamp = rospy.Time.from_sec(timestamp)
-            tf_stamped.header.frame_id = 'camera_init'
-            tf_stamped.child_frame_id = 'camera_gray_left'
+            tf_stamped.header.frame_id = 'base_link_init'
+            tf_stamped.child_frame_id = 'base_link'
             
             t = tf_matrix[0:3, 3]
             q = tf.transformations.quaternion_from_matrix(tf_matrix)
@@ -298,7 +298,7 @@ def run_kitti2bag():
     parser.add_argument("dir", nargs = "?", default = os.getcwd(), help = "base directory of the dataset, if no directory passed the deafult is current working directory")
     parser.add_argument("-t", "--date", help = "date of the raw dataset (i.e. 2011_09_26), option is only for RAW datasets.")
     parser.add_argument("-r", "--drive", help = "drive number of the raw dataset (i.e. 0001), option is only for RAW datasets.")
-    parser.add_argument("-s", "--sequence", choices = odometry_sequences,help = "sequence of the odometry dataset (between 00 - 21), option is only for ODOMETRY datasets.")
+    parser.add_argument("-s", "--sequence", choices = odometry_sequences, help = "sequence of the odometry dataset (between 00 - 21), option is only for ODOMETRY datasets.")
     args = parser.parse_args()
 
     bridge = CvBridge()
@@ -401,12 +401,12 @@ def run_kitti2bag():
             tf_camera_init = np.array([[0, 0, 1, 0],[-1, 0, 0, 0],[0, -1, 0, 0],[0, 0, 0, 1]])
 
             transforms = [
-                ('world', 'camera_init', tf_camera_init),
-                ('world', 'velo_init', tf_camera_init.dot(kitti.calib.T_cam0_velo)),
-                (cameras[0][1], velo_frame_id, kitti.calib.T_cam0_velo),
-                (cameras[0][1], cameras[1][1], kitti.calib.T_cam0_velo.dot(inv(kitti.calib.T_cam1_velo))),
-                (cameras[0][1], cameras[2][1], kitti.calib.T_cam0_velo.dot(inv(kitti.calib.T_cam2_velo))),
-                (cameras[0][1], cameras[3][1], kitti.calib.T_cam0_velo.dot(inv(kitti.calib.T_cam3_velo)))
+                ('world', 'base_link_init', tf_camera_init),
+                ('base_link', velo_frame_id, kitti.calib.T_cam0_velo),
+                (velo_frame_id, cameras[0][1], inv(kitti.calib.T_cam0_velo)),
+                (velo_frame_id, cameras[1][1], inv(kitti.calib.T_cam1_velo)),
+                (velo_frame_id, cameras[2][1], inv(kitti.calib.T_cam2_velo)),
+                (velo_frame_id, cameras[3][1], inv(kitti.calib.T_cam3_velo))
             ]
 
             util = pykitti.utils.read_calib_file(os.path.join(args.dir, 'sequences', args.sequence, 'calib.txt'))
